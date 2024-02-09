@@ -14,12 +14,64 @@ from pulsectl import ( Pulse,
 
 class LogMessage:
 	def __init__(self, fmt, a, k): self.fmt, self.a, self.k = fmt, a, k
+		""""Initializes the object with the specified format, amplitude, and frequency.
+		Parameters:
+		- fmt (str): The format of the object.
+		- a (int/float): The amplitude of the object.
+		- k (int/float): The frequency of the object.
+		Returns:
+		- None: This function does not return any value.
+		Processing Logic:
+		- Assigns the format, amplitude, and frequency to the object.
+		- Only assigns values, does not perform any calculations.
+		- The format must be a string, and the amplitude and frequency must be numerical values.
+		- Example: obj = Object("circle", 5, 10) creates an object with a circle format, amplitude of 5, and frequency of 10.""""
+		
 	def __str__(self): return self.fmt.format(*self.a, **self.k) if self.a or self.k else self.fmt
+		""""Returns a formatted string using the provided format and arguments.
+		Parameters:
+		- fmt (str): The format string to be used.
+		- *a (tuple): Optional positional arguments to be used in the format string.
+		- **k (dict): Optional keyword arguments to be used in the format string.
+		Returns:
+		- str: The formatted string.
+		Processing Logic:
+		- Uses the provided format string.
+		- Uses optional positional and keyword arguments.
+		- Returns the formatted string.
+		- If no arguments are provided, returns the format string as is.""""
+		
 
 class LogStyleAdapter(logging.LoggerAdapter):
 	def __init__(self, logger, extra=None):
+		"""Creates a LogStyleAdapter object.
+		Parameters:
+		- logger (object): Object used for logging.
+		- extra (object): Additional object used for logging, if applicable.
+		Returns:
+		- LogStyleAdapter: A LogStyleAdapter object.
+		Processing Logic:
+		- Initialize LogStyleAdapter object.
+		- Use logger for logging.
+		- Use extra for additional logging.
+		- If extra is not provided, use an empty object."""
+		
 		super(LogStyleAdapter, self).__init__(logger, extra or {})
 	def log(self, level, msg, *args, **kws):
+		"""Logs a message at the specified level.
+		Parameters:
+		- level (int): The level at which the message should be logged.
+		- msg (str): The message to be logged.
+		- *args (tuple): Optional arguments to be formatted into the message.
+		- **kws (dict): Optional keyword arguments to be formatted into the message.
+		Returns:
+		- None: This function does not return any value.
+		Processing Logic:
+		- Checks if the specified level is enabled for logging.
+		- Formats the message and keyword arguments.
+		- Calls the logger's _log() method to log the message at the specified level.
+		- If the keyword argument 'exc_info' is present, it is removed from the keyword arguments and passed to the logger's _log() method as a separate argument."""
+		
 		if not self.isEnabledFor(level): return
 		log_kws = {} if 'exc_info' not in kws else dict(exc_info=kws.pop('exc_info'))
 		msg, kws = self.process(msg, kws)
@@ -30,6 +82,19 @@ get_logger = lambda name: LogStyleAdapter(logging.getLogger(name))
 
 def uid_str( seed=None, length=4,
 		_seed_gen=it.chain.from_iterable(map(range, it.repeat(2**30))) ):
+	"""Generate a unique identifier string based on the given seed and length.
+	Parameters:
+	- seed (str): Seed used to generate the unique identifier string. Defaults to None.
+	- length (int): Length of the unique identifier string in characters. Defaults to 4.
+	- _seed_gen (it.chain): Internal variable used to generate the seed. Defaults to it.chain.from_iterable(map(range, it.repeat(2**30))).
+	Returns:
+	- str: Unique identifier string based on the given seed and length.
+	Processing Logic:
+	- Generates a seed if none is provided.
+	- Uses hashlib to convert the seed to bytes.
+	- Uses base64 to encode the bytes and return a string.
+	- The length of the string is determined by the given length parameter."""
+	
 	seed_bytes = length * 6 // 8
 	assert seed_bytes * 8 // 6 == length, [length, seed_bytes]
 	if seed is None: seed = '\0\0\0{:08x}'.format(next(_seed_gen))
@@ -39,6 +104,16 @@ def uid_str( seed=None, length=4,
 
 class Conf:
 	def __repr__(self): return repr(vars(self))
+		"""Returns a string representation of the object's attributes.
+		Parameters:
+		- self (object): The object whose attributes will be represented.
+		Returns:
+		- str: A string representation of the object's attributes.
+		Processing Logic:
+		- Uses the vars() function to retrieve the object's attributes.
+		- Converts the attributes into a string using the repr() function.
+		- Returns the string representation of the object."""
+		
 
 	adjust_step = 5.0 # percent, 0-100
 	# Volume values are relative to "normal" (non-soft-boosted) pulseaudio volume
@@ -94,11 +169,37 @@ class Conf:
 	def parse_bool(val, _states={
 			'1': True, 'yes': True, 'true': True, 'on': True,
 			'0': False, 'no': False, 'false': False, 'off': False }):
+		"""Parse a string value to a boolean.
+		Parameters:
+		- val (str): String value to be parsed.
+		- _states (dict): Dictionary containing key-value pairs of valid string representations of boolean values and their corresponding boolean values.
+		Returns:
+		- bool: Boolean value corresponding to the given string value.
+		Processing Logic:
+		- Use a dictionary to map string values to boolean values.
+		- Convert the given string value to lowercase.
+		- If the string value is a valid key in the dictionary, return the corresponding boolean value.
+		- Otherwise, raise a ValueError."""
+		
 		try: return _states[val.lower()]
 		except KeyError: raise ValueError(val)
 
 
 def conf_read(path=None, base=None, **overrides):
+	"""Reads a configuration file and updates the provided Conf object with the values found in the file.
+	Parameters:
+	- path (str): Optional. Path to the configuration file. If not provided, the default path will be used.
+	- base (Conf): Optional. Base Conf object to be updated with the values found in the configuration file.
+	- **overrides (kwargs): Optional. Additional keyword arguments that will override the values found in the configuration file.
+	Returns:
+	- conf (Conf): The updated Conf object.
+	Processing Logic:
+	- If no path is provided, the default path will be used.
+	- If no base Conf object is provided, a new one will be created.
+	- If the configuration file cannot be opened, no updates will be made.
+	- If the configuration file is successfully opened, the Conf object will be updated with the values found in the file.
+	- Any additional keyword arguments provided will override the values found in the configuration file."""
+	
 	conf, conf_file = base or Conf(),\
 		os.path.expanduser(path or conf_read.path_default)
 	try: conf_file = open(conf_file)
@@ -109,6 +210,20 @@ conf_read.path_default = '~/.pa-mixer.cfg'
 conf_read.path_legacy = '~/.pulseaudio-mixer-cli.cfg'
 
 def conf_update_from_file(conf, path_or_file, overrides):
+	"""Parameters:
+	- conf (Config): The configuration object to be updated.
+	- path_or_file (str or file): The path or file object of the configuration file to be read.
+	- overrides (dict): A dictionary of values to override the configuration file.
+	Returns:
+	- None: This function does not return anything.
+	Processing Logic:
+	- Read the configuration file.
+	- Update the configuration object with the values from the file.
+	- If a volume after max value is specified, set the volume capacity function.
+	- If the volume type is not flat, set the volume type get and set functions.
+	- Create an ordered dictionary of stream parameters and a list of parameters to re-apply on every event.
+	- For each section in the configuration file, if the section is a stream section, add the parameters to the stream parameters dictionary."""
+	
 	if isinstance(path_or_file, str): path_or_file = open(path_or_file)
 	with path_or_file as src:
 		config = configparser.ConfigParser(
@@ -168,14 +283,53 @@ class PAMixerMenuItem:
 	menu = uid = text = None
 
 	def muted_toggle(self): self.muted = not self.muted
+		""""Toggle the muted state of the object.
+		Parameters:
+		- self (object): The object to be muted.
+		Returns:
+		- None: The function does not return any value.
+		Processing Logic:
+		- Toggle the value of the 'muted' attribute.
+		- 'muted' attribute can only be True or False.
+		- No input validation is performed.""""
+		
 	def volume_change(self, delta):
+		"""Volume change function that updates the volume by the given delta.
+		Parameters:
+		- delta (int): The amount by which the volume will be changed.
+		Returns:
+		- None: This function does not return any value.
+		Processing Logic:
+		- Updates volume by given delta.
+		- Logs volume update and delta.
+		- Updates volume attribute.
+		Example:
+		volume_change(5)
+		# Volume updated by 5, new volume is 15"""
+		
 		log.debug('Volume update: {} -> {} [{}]', self.volume, self.volume + delta, delta)
 		self.volume += delta
 	def special_action(self, key, key_match): pass
+		""""Performs a special action based on the given key and key_match."
+		Parameters:
+		- key (str): The key used to determine the special action.
+		- key_match (str): The key match used to determine the special action, if applicable.
+		Returns:
+		- None: This function does not return any value.
+		Processing Logic:
+		- Matches key and key_match to determine action.
+		- Executes the special action.
+		- No return value is needed.
+		- Function is used within a class."""
+		
 
 	def get_next(self, m=1):
+		""""""
+		
 		return self.menu.item_after(self, m=m) if self.menu else self
 	def get_prev(self, m=1):
+		""""""
+		
 		return self.menu.item_before(self, m=m) if self.menu else self
 
 class PAMixerMenu:
@@ -184,11 +338,44 @@ class PAMixerMenu:
 	items, controls, conf = tuple(), OrderedDict(), Conf()
 
 	def update(self, incremental=False): return
+		""""Updates the object with new data, either incrementally or by replacing the existing data."
+		Parameters:
+		- incremental (bool): Determines whether the update should be incremental or not. Defaults to False.
+		Returns:
+		- None: Returns nothing.
+		Processing Logic:
+		- If incremental is True, the existing data will be updated with the new data.
+		- If incremental is False, the existing data will be replaced with the new data.
+		- This function does not return any value, it simply updates the object.
+		- This function can be used to update the data in an object without having to create a new object."""
+		
 
 	@property
 	def item_list(self): return list(self.items) # for display only
+		""""Returns a list of items for display purposes."
+		Parameters:
+		- self (object): The object containing the items to be listed.
+		Returns:
+		- list: A list of items from the object.
+		Processing Logic:
+		- Get items from object.
+		- Convert items to list.
+		- Return list.
+		- For display purposes only."""
+		
 
 	def item_default(self, n=None):
+		"""Returns the default item from the given list of items, or the item at the specified index if provided.
+		Parameters:
+		- n (int): Optional. Index of the item to return. Defaults to None.
+		Returns:
+		- item: The default item from the list, or the item at the specified index.
+		Processing Logic:
+		- Get the list of items.
+		- If the list is empty, return None.
+		- If an index is provided, make sure it is within the range of the list.
+		- Return the item at the specified index if provided, otherwise use the default focus policy to determine the default item."""
+		
 		items = self.item_list
 		if not items: return
 		idx = None
@@ -197,10 +384,47 @@ class PAMixerMenu:
 			else self.focus_policies[self.conf.focus_default](items)
 
 	def item_newer(self, ts): return
+		""" self.ts > ts
+		"Checks if the timestamp of an item is newer than a given timestamp."
+		Parameters:
+		- self (object): The item object to be checked.
+		- ts (int): The timestamp to be compared to.
+		Returns:
+		- bool: True if the item's timestamp is newer than the given timestamp, False otherwise.
+		Processing Logic:
+		- Check if item's timestamp is greater than given timestamp."""
+		
 
 	def item_id(self, item): return item.uid
+		""""Returns the unique identifier of the given item.
+		Parameters:
+		- item (object): The item to retrieve the identifier from.
+		Returns:
+		- int: The unique identifier of the given item.
+		Processing Logic:
+		- Get the uid attribute from the item.
+		- If the item does not have a uid attribute, an error will be raised.
+		- If the item has a uid attribute, return its value.
+		- This function is used to retrieve the identifier of an item in a dataset.
+		- The identifier is used to uniquely identify an item in the dataset.
+		- The identifier is an integer value."""
+		
 
 	def item_shift(self, item=None, m=0, t=None):
+		"""item_shift:
+		Function to shift the focus to a different item in a list.
+		Parameters:
+		- item (object): The item to shift the focus to.
+		- m (int): The number of items to shift by.
+		- t (str): The type of shift to perform, either "first" or "last".
+		Returns:
+		- object: The item that the focus was shifted to.
+		Processing Logic:
+		- Shifts the focus to the first or last item in the list.
+		- Gets the index of the current item.
+		- Calculates the new index based on the shift amount.
+		- Handles wrapping if the new index is out of bounds."""
+		
 		if t and self.items:
 			n = dict(first=0, last=len(self.items)-1).get(t)
 			assert n is not None, t
