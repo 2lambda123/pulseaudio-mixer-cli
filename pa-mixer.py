@@ -967,7 +967,7 @@ class PAMixerUI:
 			elif key_match('x'): self.mode_switch()
 			elif key_match('q'): break
 			elif key < 0: # signal - usually from pulse events
-				for menu in set([self.menu, *(getattr(self, k) for k in self.mode_opts)]):
+				for menu in {self.menu, *(getattr(self, k) for k in self.mode_opts)}:
 					if menu: menu.update(incremental=True)
 
 
